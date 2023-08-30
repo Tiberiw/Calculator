@@ -66,11 +66,16 @@ function Calculator() {
             case "+": 
             case "-":
             case "*":
-            case "/":
             case "**":
                 if(this.getFirst() === null || this.getSecond() === null)
                     error = "Malformed expression";
+    
+                break;
 
+            case "/":
+                if(this.getFirst() === null || this.getSecond() === null)
+                    error = "Malformed expression";
+                
                 if(this.getSecond() === 0)
                     error = "Division by 0 is undefined";
                 
@@ -79,6 +84,7 @@ function Calculator() {
             case "sqrt":
                 if(this.getFirst() === null)
                     error = "Malformed expression";
+                
                 break;
 
             case "%":
@@ -105,4 +111,4 @@ function Calculator() {
     }
 }
 
-let calc = new Calculator();
+let calculator = new Calculator();
