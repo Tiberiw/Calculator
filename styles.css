@@ -18,7 +18,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-evenly;
     /* JUSTIFY-CONTENT */
     background-color: hsl(191, 52%, 12%);
 }
@@ -146,6 +146,12 @@ button:hover {
 
 .operation {
   background-color: #d9b08c;
+}
+
+footer.footer {
+  font-weight: normal;
+  font-size: 20px;
+  color: white;
 }
 
 /* .sign,
