@@ -391,7 +391,6 @@ function UI(service) {
     this.intermediate = document.querySelector('div.intermediate');
     this.final = document.querySelector('div.result');
 
-
     this.setUp = function() {
 
         /* OPERAND BUTTON EVENTS */
@@ -420,7 +419,7 @@ function UI(service) {
             op.addEventListener('click', (e) => {
 
                 /* MODIFY E.TARGET.ID */
-                console.log(e.target);
+                
                 let result = this.service.manageOperation(e.target.closest('.operation').id);
                 
                 if(result[0] === null) {
@@ -441,6 +440,73 @@ function UI(service) {
             this.show('0',this.final);
             this.show('',this.intermediate);
         })
+
+
+        window.addEventListener('keydown', (e) => {
+
+            let operatorDictionary = {
+                "+": "add",
+                "-": "subtract",
+                "*": "multiply",
+                "/": "division",
+                "^": "pow",
+                "%": "procent",
+                "s": "sqrt",
+                "=": "equal",
+                "Enter": "equal"
+            };
+    
+            let operandDictionary = {
+                "0": "zero",
+                "1": "one",
+                "2": "two",
+                "3": "three",
+                "4": "four",
+                "5": "five",
+                "6": "six",
+                "7": "seven",
+                "8": "eight",
+                "9": "nine",
+                "Backspace": "remove",
+                ".": "float",
+                "\\": "sign"
+            };
+            if(e.key in operatorDictionary) {
+                
+                let result = this.service.manageOperation(operatorDictionary[e.key]);
+                
+                if(result[0] === null) {
+                    alert('Cannot divide by zero!');
+                    this.service.reset();
+                    this.show('',this.intermediate);
+                }
+                else 
+                    this.show(result[0],this.intermediate);
+
+                this.show(result[1],this.final);
+
+
+
+            }else if(e.key in operandDictionary){
+                
+
+                /* MODIFICA SA FIE CE TREBUIE SA FIE IN DICTIONAR */
+                let result = this.service.manageOperand(operandDictionary[e.key]);
+                if(result[0] === "")
+                    this.show(result[0],this.intermediate);
+                this.show(result[1],this.final);
+
+
+            }else if (e.key === "Escape") {
+                this.service.reset();
+                this.show('0',this.final);
+                this.show('',this.intermediate);
+            }
+    
+
+        });
+
+    
 
 
         this.service.reset();
@@ -469,3 +535,4 @@ let expression = new Expression(operandOne,operandTwo,operator);
 let service = new Calculator(expression);
 let GUI = new UI(service);
 GUI.setUp();
+
