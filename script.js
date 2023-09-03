@@ -1,532 +1,471 @@
+/* Operand class */
 function Operand() {
-    this.value = null;
-    this.state = "mod";
-    this.setValue = function(newValue) {
-        
-        if(this.state === "mod") {
-            this.value = newValue;
-            this.state = "add";
-        } else {
-            this.value = 10*this.value + newValue;
-        }
-            
-    };
-    this.getValue = function() {
+
+    this.value = "0";
+
+    /* Returns the operand in string format */
+    this.getString = function(){
         return this.value;
-    };
-    this.setState = function(newState) {
-        this.state = newState;
-    };
-    this.getState = function(newState) {
-        return this.state;
+    }
+
+    /* Return the operand in number format*/
+    this.getNumber = function() {
+        return parseFloat(this.value);
+    }
+
+    /* Add a digit at the back of the number 
+        RESTRICTIONS:
+            - CANNOT have more than one '.'
+            - CANNOT have '000' or '099'
+            - CANNOT have more than 20 digits
+    */
+    this.addBack = function(newValue) {
+
+        if(newValue === ".") {
+            if(!this.value.includes('.'))
+                this.value += newValue;
+        } else {
+            if(this.value ==="0") {
+                if(newValue !== "0")
+                    this.value = newValue;
+            } else {
+                let digitNumber = this.value.replace(/[^0-9]/g,'').length;
+                if(digitNumber < 20)
+                    this.value += newValue;
+            }
+        }
+          
+    }
+
+    /* Remove the last digit from the number 
+        RESTRICTIONS:
+            - CANNOT have "-0" or "" or "-"
+    */
+    this.removeBack = function() {
+        if(this.value !== "0")
+            this.value = this.value.slice(0,-1);
+
+        if(this.value === "-0" || this.value === "" || this.value === "-")
+            this.value = "0"; 
+    }
+
+    /* Set the number value to newValue */
+    this.setValue = function(newValue) {
+        this.value = newValue;
+    }
+
+    /* Toggle the sign of the number 
+        RESTRICTIONS:
+            - CANNOT have "-0"
+    */
+    this.toggleSign = function() {
+        if(this.value[0] === "-")
+            this.value = this.value.slice(1);
+        else {
+            if(this.value !== "0")
+                this.value = "-" + this.value; 
+        }
+                   
+    }
+
+    /* Returns if there is an '.' in the number */
+    this.isFloat = function() {
+        return this.value.includes('.');
+    }
+
+    /* Returns if the number is "0" */
+    this.isZero = function() {
+        return this.value === "0";
     }
 }
 
-function Calculator() {
+function Operator() {
 
-    this.first = new Operand();
-    this.second = new Operand();
-
-    this.operator = {
-        value: null,
-        set: function(newOperator) {
-            this.value = newOperator;
-        },
-        get: function() {
-            return this.value;
-        }
+    this.operator = "";
+    this.operatorText = ""
+    this.operatorDictionary = {
+        "+": "add",
+        "-": "subtract",
+        "*": "multiply",
+        "/": "division",
+        "^": "pow",
+        "%": "procent",
+        "sqrt": "sqrt",
     }
 
-    this.operations = {
+    /* Get the operator */
+    this.getOperator = function() {
+        return this.operator;
+    }
+
+    /* Get the operator in text format */
+    this.getOperatorText = function() {
+        return this.operatorDictionary[this.operator];
+    }
+
+    /* Set the operator to newOperator */
+    this.setOperator = function(newOperator) {
+        this.operator = newOperator;
+    }
+}
+
+
+function Expression(op1,op2,oper) {
+
+    this.operandOne = op1;
+    this.operandTwo = op2;
+    this.operator = oper;
+    
+    this.getOperandOne = function() {
+        return this.operandOne;
+    }
+
+    this.getOperandTwo = function() {
+        return this.operandTwo;
+    }
+
+    this.getOperator = function() {
+        return this.operator;
+    }
+
+    this.operatorList = {
         "+": () => {
-            return this.first.getValue() + this.second.getValue();
+            return this.operandOne.getNumber() + this.operandTwo.getNumber();
         },
 
         "-": () => {
-            return this.first.getValue() - this.second.getValue();
+            return this.operandOne.getNumber() - this.operandTwo.getNumber();
         },
 
         "*": () => {
-            return this.first.getValue() * this.second.getValue();
+            return this.operandOne.getNumber() * this.operandTwo.getNumber();
         },
 
         "/": () => {
-            return +((this.first.getValue() / this.second.getValue()).toFixed(10));
+            return this.operandOne.getNumber() / this.operandTwo.getNumber();
         },
 
-        "sqrt": () => {
-            /* MAY MODIFY THIS */
-            return +(Math.sqrt(this.first.getValue()).toFixed(10));
+        "^": () => {
+            return this.operandOne.getNumber() ** this.operandTwo.getNumber();
         },
 
-        "**": () => {
-            return Math.pow(this.first.getValue(), this.second.getValue());
+        "%": (operand) => {
+            return operand.getNumber() / 100;
         },
-    };
+
+        "sqrt": (operand) => {
+            return Math.sqrt(operand.getNumber());
+        },
+    }
+
+    this.calc = function() {
+        if(this.getOperator().getOperator() === "/" && this.getOperandTwo().getNumber() === 0)
+            return "error";
+        return this.operatorList[this.operator.getOperator()]();
+    }
+
+    this.calcSpecific = function(operator,operand) {
+        return this.operatorList[operator](operand);
+    }
+
+}
+
+function Calculator(expression) {
+
+    this.expression = expression;
+    this.pointer = this.expression.getOperandOne();
+
+
+    this.overrideMode = true;
+    this.modified = false;
 
     this.reset = function() {
-        this.first.value = null;
-        this.second.value = null;
-        this.first.setState("mod");
-        this.second.setState("mod");
-        this.operator.set(null);
-        console.log("CACAT");
+
+        this.pointer = this.expression.getOperandOne();
+        this.overrideMode = true;
+        this.modified = false;
+        this.expression.getOperandOne().setValue('0');
+        this.expression.getOperandTwo().setValue('0');
+        this.expression.getOperator().setOperator('');
+    }
+    
+
+    this.dictionary = {
+        "zero": "0",
+        "one": "1",
+        "two": "2",
+        "three": "3",
+        "four": "4",
+        "five": "5",
+        "six": "6",
+        "seven": "7",
+        "eight": "8",
+        "nine": "9",
+        "float": ".",
+        "add": {
+            operator: "+",
+            operatorShow: "+",
+        },
+        "subtract": {
+            operator: "-",
+            operatorShow: "-",
+        },
+        "multiply": {
+            operator: "*",
+            operatorShow: "×",
+        },
+        "division": {
+            operator: "/",
+            operatorShow: "÷",
+        },
+        "pow": {
+            operator: "^",
+            operatorShow: "^",
+        },
+        "procent": {
+            operator: "%",
+            operatorShow: "%",
+        },
+        "sqrt": {
+            operator: "sqrt",
+            operatorShow: "√"
+        },
+
     }
 
-  
+    /* IMPLEMENT LOGIC : mode, pointer */
+    this.manageOperand = function(operand) {
 
-    this.validate = function() {
-        let error = "ok";
+        let result = ["ok",""];
 
-        switch(this.operator.get()) {
+          switch(operand) {
 
-            case "+": 
-            case "-":
-            case "*":
-            case "**":
-                if(this.first.getValue() === null || this.second.getValue() === null)
-                    error = "Malformed expression";
-    
+            /* Remove the last digit */
+            case "remove":
+                this.pointer.removeBack();
+
+                /* If the intermediate screen is not relevant, delete it */
+                if(this.pointer === this.expression.getOperandOne())
+                    result[0] = "";
                 break;
 
-            case "/":
-                if(this.first.getValue() === null || this.second.getValue() === null)
-                    error = "Malformed expression";
-                
-                if(this.second.getValue() === 0)
-                    error = "Division by 0 is undefined";
-                
+            case "sign":
+                this.pointer.toggleSign();
                 break;
 
-            case "sqrt":
-                if(this.first.getValue() === null)
-                    error = "Malformed expression";
-                
-                break;
-
-            case "%":
-                /* UPDATE */
-
-                break;
             default:
-                error = "Malformed expression";
 
+                /* Reset the number */
+                if(this.overrideMode) {
+                    this.overrideMode = false;
+                    this.pointer.setValue("0");
+                }
+
+                /* The intermediat screen not relevant */
+                if(this.pointer === this.expression.getOperandOne())
+                    result[0] = "";
+
+                /* Add back the digit */
+                this.pointer.addBack(this.dictionary[operand]);
+
+                /* Set modified to true */
+                if(this.pointer === this.expression.getOperandTwo())
+                    this.modified = true;
         }
 
-
-        return error;
+        /* Return the current operator*/
+        result[1] = this.pointer.getString();
+        return result;
     }
 
-    
+
+
+    this.manageOperation = function(operation) {
+        let result = ["",""];
+
+        if(operation === "equal") {
+
+            /* Set the pointer to first operand */
+            this.pointer = this.expression.getOperandOne();
+
+            if(this.expression.getOperator().getOperator() !== "") {
+
+                /* Create the intermediate result */
+                result[0] = this.expression.getOperandOne().getNumber().toString() +
+                            this.dictionary[this.expression.getOperator().getOperatorText()].operatorShow + 
+                            this.expression.getOperandTwo().getNumber().toString() +
+                            "=";
+
+                /* SET THE RESULT */
+                let partialResult = this.expression.calc()
+                if(partialResult === "error") {
+                    result[0] = null;
+                    result[1] = "0";
+                    return result;
+                    
+                } 
+                this.expression.getOperandOne().setValue((+(partialResult.toFixed(10))).toString());
+
+                //Error when no operator is selected first
+            } else {
+                result[0] = this.expression.getOperandOne().getNumber().toString() + "="
+            }
+            
+        } else if(operation === "sqrt" || operation === "procent") {
+
+            let op = this.dictionary[operation].operator;
+
+            if(this.pointer === this.expression.getOperandOne()) {
+                result[0] = this.dictionary[operation].operatorShow + "(" + this.pointer.getString() + ")";
+                            
+            }
+
+            if(this.pointer === this.expression.getOperandTwo()) {
+                result[0] = this.expression.getOperandOne().getString() + 
+                            this.dictionary[this.expression.getOperator().getOperatorText()].operatorShow + 
+                            this.dictionary[operation].operatorShow + "(" + this.pointer.getString() + ")"
+            }
+
+            let newValue = this.expression.calcSpecific(op,this.pointer);
+            newValue = +(newValue.toFixed(10));
+            this.pointer.setValue(newValue);
+
+            
+
+            // this.modified = true;
+            // this.overrideMode = false;
+            
+            result[1] = this.pointer.getString();
+            return result;
+        }
+        else {
+
+            //If an operation can be done already calculate the new first operand
+            if(this.modified === true) {
+                let partialResult = this.expression.calc();
+                if(partialResult === "error") {
+                    result[0] = null;
+                    result[1] = "0";
+                    return result;
+                } 
+                this.expression.getOperandOne().setValue((+(partialResult.toFixed(10))).toString());    
+            }
+            
+            //Set the new operator and set pointer to operandTwo
+            this.expression.getOperator().setOperator(this.dictionary[operation].operator);
+            this.pointer = this.expression.getOperandTwo();
+
+            //Calculate the intermediate screen result
+            result[0] = this.expression.getOperandOne().getNumber().toString() + 
+                        this.dictionary[operation].operatorShow;
+
+
+            //Set the second operator to the same value as first operator
+            this.expression.getOperandTwo().setValue(this.expression.getOperandOne().getNumber().toString());
+        }
+
+        //Set modes
+        this.overrideMode = true;
+        this.modified = false;
+
+        //Return the current operator
+        result[1] = this.pointer.getString();
+        return result;
+    }
 }
 
 
 function UI(service) {
-
     this.service = service;
-    this.buttonAC = document.querySelector('button.clear');
-    this.buttonRemove = document.querySelector('button.remove');
-    this.buttonSqrt = document.querySelector('button.sqrt');
-    this.buttonPow = document.querySelector('button.pow');
-    this.buttonProcent = document.querySelector('button.procent');
-    this.buttonDivision = document.querySelector('button.division');
-    this.buttonSeven = document.querySelector('button.seven');
-    this.buttonEight = document.querySelector('button.eight');
-    this.buttonNine = document.querySelector('button.nine');
-    this.buttonMultiply = document.querySelector('button.multiply');
-    this.buttonFour = document.querySelector('button.four');
-    this.buttonFive = document.querySelector('button.five');
-    this.buttonSix = document.querySelector('button.six');
-    this.buttonSubtract = document.querySelector('button.subtract');
-    this.buttonOne = document.querySelector('button.one');
-    this.buttonTwo = document.querySelector('button.two');
-    this.buttonThree = document.querySelector('button.three');
-    this.buttonAdd = document.querySelector('button.add');
-    this.buttonSign = document.querySelector('button.sign');
-    this.buttonZero = document.querySelector('button.zero');
-    this.buttonFloat = document.querySelector('button.float');
-    this.buttonEqual = document.querySelector('button.equal');
 
-    this.showIntermediate = document.querySelector('div.intermediate');
-    this.showResult = document.querySelector('div.result');
 
-    this.currentResult = "0";
-    this.currentIntermediate = "0";
+    /* GET OPERATOR BUTTONS (backspace included)*/
+    this.operandButtons = [...document.querySelectorAll('.operand')];
 
-    this.pointer = "first";
+    /* GET OPERATIONS (equal included, reset included)*/
+    this.operationButtons = [...document.querySelectorAll('.operation')];
 
-    this.pointerToggle = function() {
-        if(this.pointer === "first") {
-            this.service[this.pointer].setState("mod");
-            this.pointer = "second";
-            this.service[this.pointer].setState("mod");
-        }
-        else {
-            this.service[this.pointer].setState("mod");
-            this.pointer = "first";
-            this.service[this.pointer].setState("mod");
-        }
-    }
+    this.clearButton = document.querySelector('#clear');
+
+    /* GET DISPLAY SCREENS */
+    this.intermediate = document.querySelector('div.intermediate');
+    this.final = document.querySelector('div.result');
+
 
     this.setUp = function() {
 
-        /* A C */
-        this.buttonAC.addEventListener('click', () => {
-            console.log('AC');
+        /* OPERAND BUTTON EVENTS */
+        for(let op of this.operandButtons) {
 
-            this.pointer = "first";
-            this.service.reset();
-            this.showScreen("");
-            this.showScreenSecond("");
-            console.clear();
-        });
-
-        /* REMOVE */
-        this.buttonRemove.addEventListener('click', () => {
-            console.log('Remove');
-        });
-
-        /* SQRT */
-        this.buttonSqrt.addEventListener('click', () => {
-            console.log('Sqrt');
-            
-
-            /* IF ANOTHER CALCULATION IS DONE */
-            /* THEN CALCULATE */
-        });
-
-        /* POW */
-        this.buttonPow.addEventListener('click', () => {
-            console.log('Pow');
-            
-            let error = "ok";
-
-            if(this.pointer === "second" && this.service[this.pointer].getState() === "add") {
-                error = this.operate();
-            }
-
-                if(error !== "ok") {
-                    this.service.reset();
-                    this.pointer = "first";
-                } else {
-                    this.service.operator.set('**');
-
-                    if(this.service.first.getValue() !== null) {
-                        this.pointer = "second";
-                        this.service[this.pointer].setState("mod"); 
-
-                        let first = this.service.first.getValue().toString();
-                        let operator = this.service.operator.get();
-                        this.showScreenSecond(first+operator); 
-                    }
-                    
-                }
-
-            
-        });
-
-        /* Procent */
-        this.buttonProcent.addEventListener('click', () => {
-            console.log('Procent');
-        });
-
-        /* Division */
-        this.buttonDivision.addEventListener('click', () => {
-            console.log('/');
-
-            let error = "ok";
-            if(this.pointer === "second" && this.service[this.pointer].getState() === "add") {
-                error = this.operate();
-            }
-
-            if(error !== "ok") {
-                this.service.reset();
-                this.pointer = "first";
-
-            } else {
-                this.service.operator.set('/');
+            op.addEventListener('click', (e) => {
+                /* MODIFICA SA FIE CE TREBUIE SA FIE IN DICTIONAR */
+                let result = this.service.manageOperand(e.target.id);
+                if(result[0] === "")
+                    this.show(result[0],this.intermediate);
+                this.show(result[1],this.final);
                 
-                if(this.service.first.getValue() !== null) {
-                    this.pointer = "second";
-                    this.service[this.pointer].setState("mod"); 
+            });
 
-                    let first = this.service.first.getValue().toString();
-                    let operator = this.service.operator.get();
-                    this.showScreenSecond(first+operator); 
+        }
+
+        /* OPERATOR BUTTON EVENT 
+            service - return an array of 2 element
+            the first element is the result for intermediate screen
+            the second element is the result for final screen
+                if the first element is equal to "" => error(don't show anything)
+                if the first element is equal to null => division by 0 (alert, set 0 as the first element)
+        */
+        for(let op of this.operationButtons) {
+
+            op.addEventListener('click', (e) => {
+
+                /* MODIFY E.TARGET.ID */
+                console.log(e.target);
+                let result = this.service.manageOperation(e.target.closest('.operation').id);
+                
+                if(result[0] === null) {
+                    alert('Cannot divide by zero!');
+                    this.service.reset();
+                    this.show('',this.intermediate);
                 }
-            }
+                else 
+                    this.show(result[0],this.intermediate);
 
-            
-        });
+                this.show(result[1],this.final);
+            });
+        }
 
-        /* Seven */
-        this.buttonSeven.addEventListener('click', () => {
-            console.log('7');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-            
-            this.service[this.pointer].setValue(7);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* Eight */
-        this.buttonEight.addEventListener('click', () => {
-            console.log('8');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(8);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-
-        });
-
-        /* Nine */
-        this.buttonNine.addEventListener('click', () => {
-            console.log('9');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(9);
-            this.showScreen(this.service[this.pointer].getValue().toString());
+        /* Set clear button */
+        this.clearButton.addEventListener('click', () => {
+            this.service.reset();
+            this.show('0',this.final);
+            this.show('',this.intermediate);
         })
 
-        /* Multiply */
-        this.buttonMultiply.addEventListener('click', () => {
-            console.log('*');
 
-            let error = "ok";
-            if(this.pointer === "second" && this.service[this.pointer].getState() === "add") {
-                error = this.operate();
-            }
-
-            if(error !== "ok") {
-                this.service.reset();
-                this.pointer = "first";
-
-            } else {
-                this.service.operator.set('*');
-
-                if(this.service.first.getValue() !== null) {
-                    this.pointer = "second";
-                    this.service[this.pointer].setState("mod");
-                    
-                    let first = this.service.first.getValue().toString();
-                    let operator = this.service.operator.get();
-                    this.showScreenSecond(first+operator); 
-                }
-                
-            }
-        });
-
-        /* Four */
-        this.buttonFour.addEventListener('click', () => {
-            console.log('4');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(4);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* Five */
-        this.buttonFive.addEventListener('click', () => {
-            console.log('5');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(5);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* Six */
-        this.buttonSix.addEventListener('click', () => {
-            console.log('6');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(6);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* SUBTRACTION */
-        this.buttonSubtract.addEventListener('click', () => {
-            console.log('-');
-
-            let error = "ok";
-            if(this.pointer === "second" && this.service[this.pointer].getState() === "add") {
-                error = this.operate();
-            }
-
-            if(error !== "ok") {
-                this.service.reset();
-                this.pointer = "first";
-            } else {
-                this.service.operator.set('-');
-
-                //problem
-                if(this.service.first.getValue() !== null) {
-                    this.pointer = "second";
-                    this.service[this.pointer].setState("mod");
-                    
-                    let first = this.service.first.getValue().toString();
-                    let operator = this.service.operator.get();
-                    this.showScreenSecond(first+operator); 
-                }
-
-            }
-            
-        });
-
-        /* One */
-        this.buttonOne.addEventListener('click', () => {
-            console.log('1');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(1);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* Two */
-        this.buttonTwo.addEventListener('click', () => {
-            console.log('2');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(2);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* Three */
-        this.buttonThree.addEventListener('click', () => {
-            console.log('3');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(3);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* ADD */
-        this.buttonAdd.addEventListener('click', () => {
-            console.log('+');
-
-            let error = "ok";
-            if(this.pointer === "second" && this.service[this.pointer].getState() === "add") {
-                error = this.operate();
-            }
-
-            if(error !== "ok") {
-                this.service.reset();
-                this.pointer = "first";
-
-            } else {
-                this.service.operator.set('+');
-                if(this.service.first.getValue() !== null) {
-                    this.pointer = "second";
-                    this.service[this.pointer].setState("mod");
-
-                    let first = this.service.first.getValue().toString();
-                    let operator = this.service.operator.get();
-                    this.showScreenSecond(first+operator); 
-                }
-            }
-        });
-
-        /* SIGN +/- */
-        this.buttonSign.addEventListener('click', () => {
-            console.log('+/-');
-        });
-
-        /* Zero */
-        this.buttonZero.addEventListener('click', () => {
-            console.log('0');
-
-            if(this.pointer === "first" && this.service[this.pointer].getState() === "mod")
-                this.showScreenSecond("");
-
-            this.service[this.pointer].setValue(0);
-            this.showScreen(this.service[this.pointer].getValue().toString());
-        });
-
-        /* FLOAT */
-        this.buttonFloat.addEventListener('click', () => {
-            console.log('.');
-        });
-
-        /* EQUAL */
-        this.buttonEqual.addEventListener('click', () => {
-            console.log('=');
-
-            this.pointerToggle();
-            let first = this.service.first.getValue().toString();
-            let error = this.operate();
-            if(error !== "ok") {
-                this.service.reset();
-                this.pointer = "first";
-            } else {
-
-                let operator = this.service.operator.get();
-                let second = this.service.second.getValue().toString();
-                this.showScreenSecond(first+operator+second+"=");
-            }
-            
-            this.service.second.setValue(null);
-            this.service.operator.set(null);
-            
-        });
+        this.service.reset();
+        this.show('0',this.final);
+        this.show('',this.intermediate);
 
     }
 
 
-    this.showScreen = function(result) {
-        this.currentResult = result;
-        this.showResult.textContent = this.currentResult;
+    /* Function that displays the 'newValue' on the specified 'screen'
+        newValue - int
+        screen = this.intermediate / this.final (nodes) 
+    */
+    this.show = function(newValue,screen) {
+        screen.textContent = newValue.toString();
     }
-
-    this.showScreenSecond = function(result) {
-        this.currentIntermediate = result;
-        this.showIntermediate.textContent = this.currentIntermediate;
-    }
-
-    this.operate = function() {
-
-        const error = this.service.validate();
-        if(error !== "ok") {
-            this.showScreen(error);
-            return error;
-        }
-            
-
-        const result = +(this.service.operations[this.service.operator.get()]().toFixed(10));
-
-        /* TOGGLE POINTER, SET STATE */
-        this.showScreen(String(result));
-
-        this.service.first.setState("mod");
-        this.service.first.setValue(result);
-        this.service.first.setState("mod");
-
-        return error;
-    }
-
-
-
-
-
 
 
 }
 
-let calculator = new Calculator();
-let GUI = new UI(calculator);
-GUI.setUp()
+
+let operandOne = new Operand();
+let operandTwo = new Operand();
+let operator = new Operator();
+let expression = new Expression(operandOne,operandTwo,operator);
+let service = new Calculator(expression);
+let GUI = new UI(service);
+GUI.setUp();
